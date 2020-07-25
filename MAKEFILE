@@ -1,14 +1,14 @@
 CC = gcc
 CFLAGS = -g -Wall -Wextra -Wpedantic -Wshadow -O2 -pthread
-TARGET = httpserver
+TARGET = url-shortener
 
-main:	$(Target)
+url-shortener:	$(Target)
 
 $(TARGET): $(TARGET).o  
-	$(CC) $(CFLAGS) -o $(TARGET) $(TARGET).o 
+	$(CC) $(CFLAGS) -o $(Target) $(TARGET).o 
 
-$(TARGET).o: $(TARGET).c
-	$(CC) $(CFLAGS) -c $(TARGET).c
+$(TARGET).o: $(TARGET).cpp
+	$(CC) $(CFLAGS) -c $(TARGET).cpp
 
 clean:
 	rm $(TARGET) $(TARGET).o 
