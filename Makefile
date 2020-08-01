@@ -1,6 +1,6 @@
 CC = gcc
 LDFLAGS = $(shell pkg-config --libs --cflags libmongoc-1.0)
-CFLAGS = -g -Wall -Wextra -Wpedantic -Wshadow -O2 -pthread
+CFLAGS = -g -Wall -Wextra -Wpedantic -Wshadow -O2 -pthread $(LDFLAGS)
 TARGET = url-shortener
 
 $(TARGET): $(TARGET).o
