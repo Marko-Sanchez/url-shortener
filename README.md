@@ -9,8 +9,8 @@ Program converts a long URL (original) to a shorter 7 character url. Using Mongo
 - [x] Connect to DB
 - [x] Create Insert function
 - [x] Create Query function
-- [ ] Write a Simple Hash Function
-- [ ] Complete
+- [x] Write a Simple Hash Function
+- [x] Complete
 ----
 ### Second Phase:
 - [ ] Use Url-Shortner API
