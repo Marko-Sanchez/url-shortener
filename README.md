@@ -12,12 +12,14 @@ Program converts a long URL (original) to a shorter 7 character url. Using Mongo
 - [x] Write a Simple Hash Function
 - [x] Complete
 ----
-### Second Phase:
-- [ ] Use Url-Shortner API
+### First Phase:
+- [ ] Organize functions, into a seperate .c file
+- [ ] Build / prepare  dynamic user input
 - [ ] Multiples Test Uploading to DB 
 - [ ] Test Downloading from DB
 ---
-### Third Phase:
-- [ ] Add Threads
-- [ ] Configure Parent Thread to distrubute loads 
+### Second Phase:
+- [ ] Open url link *optional*
+- [ ] Add **pThreads**
+- [ ] Configure Parent Thread to distrubute loads
 ---
