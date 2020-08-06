@@ -13,13 +13,15 @@ Program converts a long URL (original) to a shorter 7 character url. Using Mongo
 - [x] Complete
 ----
 ### First Phase:
-- [ ] Organize functions, into a seperate .c file
-- [ ] Build / prepare  dynamic user input
+- [x] Organize functions, into a seperate .c file
+- [x] Build / prepare  dynamic user input
 - [ ] Multiples Test Uploading to DB 
 - [ ] Test Downloading from DB
 ---
 ### Second Phase:
-- [ ] Open url link *optional*
+- [ ] Open url link (*optional*)
 - [ ] Add **pThreads**
 - [ ] Configure Parent Thread to distrubute loads
 ---
+### Resources:
+[mongoc man page](https://s3.amazonaws.com/mciuploads/mongo-c-driver/man-pages/libbson/latest/index.html).
