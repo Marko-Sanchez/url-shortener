@@ -1,4 +1,4 @@
-# URL Shortener ![C](https://img.shields.io/badge/-C-yellow) ![Database](https://img.shields.io/badge/-MongoDB-blue) ![Linux](https://img.shields.io/badge/Linux-Ubuntu-critical)
+# URL Shortener ![C](https://img.shields.io/badge/-C-yellow) ![Database](https://img.shields.io/badge/-MongoDB-blue) ![Linux](https://img.shields.io/badge/Linux-Ubuntu-critical) [![Language grade: C/C++](https://img.shields.io/lgtm/grade/cpp/g/Marko-Sanchez/url-shortener.svg?logo=lgtm&logoWidth=18)](https://lgtm.com/projects/g/Marko-Sanchez/url-shortener/context:cpp)
 
 ## Description
 Program converts a long URL (original) to a shorter url. Using MongoDB atlas, we are able to request long url's given a key or convert url from long to short. 
