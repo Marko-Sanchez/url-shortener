@@ -1,15 +1,18 @@
 CC = gcc
 LDFLAGS = $(shell pkg-config --libs --cflags libmongoc-1.0)
-CFLAGS = -g -Wall -Wextra -Wpedantic -Wshadow -O2 -pthread $(LDFLAGS)
+CFLAGS = -g -Wall -Wextra -Wpedantic -Wshadow -O2 -pthread -I $(LDFLAGS)
+DEPS = functions.h 
+OBJ = url-shortener.o functions.o
 TARGET = url-shortener
 
-$(TARGET): $(TARGET).o
-	$(CC) $(CFLAGS) -o $(TARGET) $(TARGET).o $(LDFLAGS)
+%.o:%.c $(DEPS)
+	$(CC) -c -o $@ $< $(CFLAGS) $(LDFLAGS)
 
-$(TARGET).o: $(TARGET).c
-	$(CC) $(CFLAGS) -c $(TARGET).c
+$(TARGET): $(OBJ)
+	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS)
+
 clean:
-	rm $(TARGET) $(TARGET).o
+	rm $(TARGET) $(OBJ) 
 	
 help:
 	@echo	"Usage: make [target] ../n"
