@@ -28,5 +28,5 @@ Program converts a long URL (original) to a shorter url. Using MongoDB atlas, we
 - [ ] Open url link (*optional*)
 ---
 ### Resources:
-[mongoc man page](https://s3.amazonaws.com/mciuploads/mongo-c-driver/man-pages/libbson/latest/index.html).
-[mongocDB c driver](http://mongoc.org/libmongoc/current/installing.html)
+* [mongoc man page](https://s3.amazonaws.com/mciuploads/mongo-c-driver/man-pages/libbson/latest/index.html).<br />  
+* [mongocDB c driver](http://mongoc.org/libmongoc/current/installing.html).
