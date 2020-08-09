@@ -19,7 +19,7 @@ Program converts a long URL (original) to a shorter url. Using MongoDB atlas, we
 - [x] Build / prepare  dynamic user input
 - [x] Multiples Test Uploading to DB 
 - [x] Test Downloading from DB
-= [x] Complete
+- [x] Complete
 ---
 ### Second Phase:
 - [x] Add **pThreads**
