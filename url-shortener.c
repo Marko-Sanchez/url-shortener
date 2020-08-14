@@ -27,6 +27,8 @@ pthread_mutex_t request_mutex;
 pthread_mutexattr_t mutex_atrribute;
 pthread_cond_t got_request = PTHREAD_COND_INITIALIZER;
 
+static bool in_shutdown = false;
+
 /**
  * Parse user terminal input; options: insert url and queue database.
  * @params { struct request *} holds user input: request comman, url/ key. 
@@ -66,10 +68,15 @@ void *handle_request(void *thread_arg){
 		pthread_mutex_lock(&request_mutex);
 		// Wait for alert from main thread.
 		pthread_cond_wait(&got_request, &request_mutex);
-
+		if( in_shutdown ){
+			pthread_mutex_unlock(&request_mutex);
+			break;
+		}
+		
 		// Handle request.
 		request_to_handle = head;
 		head = head -> next;
+		
 		// Free mutex, since we no longer are in critical area.
 		pthread_mutex_unlock(&request_mutex);
 
@@ -96,13 +103,18 @@ void *handle_request(void *thread_arg){
 			}
 
 		}
-		// Free pointer allocated with calloc.
+		// Free pointer allocated with malloc.
 		free(request_to_handle);
 	}
+
+	// Closing thread to free memory allocated.
+	printf( "Closing Thread %d ...\n",ID);
+	return NULL;
 	
 }
 
 int main(){
+	void *ret;
 
 	// INIT: libmongoc's internals.
 	mongoc_init();
@@ -130,12 +142,12 @@ int main(){
 	/* Server: TODO Getting ready to set up*/
 	
 	char* line = NULL;
-	size_t len = 0;
 	char* delim = " ";
 	while( true ){
 		
 		// Read from stdin.
 		// Get the long string parse it by space.
+		size_t len = 0;
 		if( getline(&line, &len, stdin) == -1){
 			printf("Error message: %s\n",strerror(errno) );
 			continue;
@@ -173,15 +185,27 @@ int main(){
 			pthread_mutex_unlock(&request_mutex);
 			}// arg_parser()
 
+			free(line);
 		}else{
 		// User pressed enter thus, they want to exit. 
 			printf("Exiting program...\n\n");
 			free(line);
 			break;
 		}
-		free(line);
 
 	}
+
+	pthread_mutex_lock( &request_mutex);
+	in_shutdown = true;
+	pthread_mutex_unlock( &request_mutex);
+	// Signal every thread to end.
+	pthread_cond_broadcast( &got_request);
+
+	for( int i = 0; i < 4; i++){
+		pthread_join( threads[i],&ret);
+	}
+
+
 
 	// Clean up libmongoc.
 	mongoc_client_destroy (client);
