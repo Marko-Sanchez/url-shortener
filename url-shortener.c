@@ -146,14 +146,16 @@ int main(){
 		if( newline )
 			*newline = 0;
 		
-		if( line != NULL && --len != 0 ){
+		if( line != NULL && strlen(line) != 0){
 			
-			struct request *new_request = (struct request*) calloc(1,sizeof(struct request) );
+			struct request *new_request;
+			new_request = malloc(sizeof *new_request);
 
 			char* current_location;
 			char* value = strtok_r(line , delim, &current_location );
 			strcpy(new_request->req, value );
-			strcpy(new_request->str,strtok_r(NULL, delim, &current_location) );
+			value = strtok_r(NULL, delim, &current_location); 
+			strcpy(new_request->str, value);
 
 			// returns false if invalid command is passed.
 			if( arg_parser(new_request) ){
@@ -173,6 +175,7 @@ int main(){
 
 		}else{
 		// User pressed enter thus, they want to exit. 
+			printf("Exiting program...\n\n");
 			free(line);
 			break;
 		}
