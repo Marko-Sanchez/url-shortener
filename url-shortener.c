@@ -120,6 +120,7 @@ int main(){
 	mongoc_init();
 
 	// Create new client instance:
+	mongoc_client_t *client;
 
 	// Init: Threads & Mutxes.
 	pthread_mutexattr_init(&mutex_atrribute);
