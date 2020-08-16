@@ -8,17 +8,20 @@
 
 #define MAX_URL_LENGTH 1000
 #define MAX_HASH_LENGTH 250
-// Holds user input. Might be Deprecated due to thrad creation.
+#define API_KEY "YOU API"
+
+// Hold information that needed by worker thread.
 struct request{
 	char req[3];
 	char str[MAX_URL_LENGTH];
 	char hashed_str[MAX_HASH_LENGTH];
 	bool insert;
 	struct request *next;
-}*head, *tail;
+}*head = NULL, *tail = NULL;
 
+// Thread specific information.
 struct thread_arg_t{
-	mongoc_client_t* client;
+	mongoc_client_pool_t* pool;
 	int thread_id;
 };
 
@@ -27,6 +30,7 @@ pthread_mutex_t request_mutex;
 pthread_mutexattr_t mutex_atrribute;
 pthread_cond_t got_request = PTHREAD_COND_INITIALIZER;
 
+// Alerts threads to shut down.
 static bool in_shutdown = false;
 
 /**
@@ -48,6 +52,7 @@ bool arg_parser(struct request *request_to_handle ){
 	}
 	return true;
 }
+
 /**
  *  Handles request given to thread.
  *  @params { struct thread_arg_t } holds information about the thread
@@ -58,8 +63,8 @@ void *handle_request(void *thread_arg){
 	pthread_mutex_lock(&request_mutex);
 	struct thread_arg_t args = *(struct thread_arg_t*) thread_arg;
 	uint8_t ID = args.thread_id;
-	mongoc_client_t *client = args.client;
-	printf( "Thread %d online...\n",ID);
+	mongoc_client_pool_t *pool = args.pool;
+	mongoc_client_t *client;
 	pthread_mutex_unlock(&request_mutex);
 
 	// Handles request once alerted by main().
@@ -81,13 +86,12 @@ void *handle_request(void *thread_arg){
 		pthread_mutex_unlock(&request_mutex);
 
 		
+		// Thread-Safe call for client.
+		client = mongoc_client_pool_pop(pool);
 		if( request_to_handle -> insert ){
-		printf("Thread %d is handling request: %s : %s \n",ID, request_to_handle->req,request_to_handle->str );
 			// Url hash converter:
 			b62_converter( request_to_handle->str,
 					request_to_handle-> hashed_str);
-			printf("URL: %s\nHash: %s\n",request_to_handle-> str
-					,request_to_handle -> hashed_str);
 
 			// Insertion:
 			if( !insert_DB(client
@@ -96,13 +100,15 @@ void *handle_request(void *thread_arg){
 				fprintf(stderr, "Failed Insertion\n");
 		}
 		else{ 
-		printf("Thread %d is handling request: %s : %s \n",ID, request_to_handle->req,request_to_handle->hashed_str);
 			// Query:
 			if( ! query_DB(client,request_to_handle ->hashed_str) ){
 				fprintf(stderr, "Query Failed\n");
 			}
 
 		}
+
+		// Release client back to pool.
+		mongoc_client_pool_push(pool,client);
 		// Free pointer allocated with malloc.
 		free(request_to_handle);
 	}
@@ -114,13 +120,24 @@ void *handle_request(void *thread_arg){
 }
 
 int main(){
+	const char *uri_string = API_KEY;
+	mongoc_uri_t *uri;
+	mongoc_client_pool_t *pool;
+	bson_error_t error;
 	void *ret;
 
 	// INIT: libmongoc's internals.
 	mongoc_init();
 
-	// Create new client instance:
-	mongoc_client_t *client;
+	uri = mongoc_uri_new_with_error(uri_string, & error);
+	if(!uri){
+		fprintf(stderr,
+				"failed to parse URI..\nerror message:  %s\n",
+				error.message);
+		return EXIT_FAILURE;
+	}
+
+	pool = mongoc_client_pool_new(uri);
 
 	// Init: Threads & Mutxes.
 	pthread_mutexattr_init(&mutex_atrribute);
@@ -131,50 +148,60 @@ int main(){
 	struct thread_arg_t thread_args[ 4 ];
 
 	// Create user inputed amount of threads.
-	for( int i = 0; i < 4 ; i++){
+	for( unsigned int i = 0; i < 4 ; ++i){
 		// Intialize arguements for thread.
 		thread_args[i].thread_id = i;
-		thread_args[i].client = client;
+		thread_args[i].pool = pool;
 		if(pthread_create( &threads[i], NULL, handle_request,&thread_args[i]) ){
 			fprintf(stderr, "Error creating Thread\n");
 		}
 	}
 
-	/* Server: TODO Getting ready to set up*/
 	
+
 	char* line = NULL;
 	char* delim = " ";
+	
+	// Reads user input and passes workload to worker threads.
 	while( true ){
 		
-		// Read from stdin.
-		// Get the long string parse it by space.
+		// Ask user for input and retrieve line.
 		size_t len = 0;
 		if( getline(&line, &len, stdin) == -1){
 			printf("Error message: %s\n",strerror(errno) );
 			continue;
 		}
 
-		// Remove new-lin char.
+		// Remove new-line char.
 		char *newline = strchr(line,'\n');
 		if( newline )
 			*newline = 0;
 		
 		if( line != NULL && strlen(line) != 0){
 			
+
+			char* current_location;
+			char* req = strtok_r(line , delim, &current_location );
+			char* value = strtok_r(NULL, delim, &current_location); 
+
+			// Check for buffer overflow
+			if(strlen(req)  > 3 || value == NULL ||  strlen(value) == 0 ){
+				free(line);
+				fprintf(stderr,"\nREQUEST BUFFER OVERFLOW OR INVALID INPUT URL\nTry Again\n\n");
+				continue;
+			}
+			// Freed in thread.
 			struct request *new_request;
 			new_request = malloc(sizeof *new_request);
 
-			char* current_location;
-			char* value = strtok_r(line , delim, &current_location );
-			strcpy(new_request->req, value );
-			value = strtok_r(NULL, delim, &current_location); 
+			strcpy(new_request->req, req );
 			strcpy(new_request->str, value);
 
 			// returns false if invalid command is passed.
 			if( arg_parser(new_request) ){
-			printf("Values after arg_parser: %s:%s:%d\n",new_request -> req, new_request->hashed_str,new_request->insert);
-			// Add to pointers: CRITICAL AREA
-			pthread_mutex_lock(&request_mutex);
+
+				// Add to pointers: CRITICAL AREA
+				pthread_mutex_lock(&request_mutex);
 				if(head == NULL){
 					head = new_request;
 					tail = new_request;
@@ -182,13 +209,14 @@ int main(){
 					tail -> next = new_request;
 					tail = new_request;
 				}
-			pthread_cond_signal(&got_request);
-			pthread_mutex_unlock(&request_mutex);
-			}// arg_parser()
+				pthread_cond_signal(&got_request);
+				pthread_mutex_unlock(&request_mutex);
+			}
 
+			// Free char* malloc'd by getline.
 			free(line);
 		}else{
-		// User pressed enter thus, they want to exit. 
+			// User pressed enter thus, they want to exit. 
 			printf("Exiting program...\n\n");
 			free(line);
 			break;
@@ -202,14 +230,15 @@ int main(){
 	// Signal every thread to end.
 	pthread_cond_broadcast( &got_request);
 
-	for( int i = 0; i < 4; i++){
+	for( unsigned int i = 0; i < 4; i++){
 		pthread_join( threads[i],&ret);
 	}
 
 
 
 	// Clean up libmongoc.
-	mongoc_client_destroy (client);
+	mongoc_client_pool_destroy(pool);
+	mongoc_uri_destroy(uri);
 	mongoc_cleanup ();
 
 	return EXIT_SUCCESS;
