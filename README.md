@@ -24,10 +24,10 @@ Program converts a long URL (original) to a shorter url. Using MongoDB atlas, we
 ### Second Phase:
 - [x] Add **pThreads**
 - [x] solve any memory issues
-- [ ] Test threaded server
-- [ ] Make client connection thread safe
+- [x] Test threaded server
+- [x] Make client connection thread safe
 - [ ] Clean code
-- [ ] Configure Parent Thread to distrubute loads
+- [ ] Configure Parent Thread to distrubute loads more efficiently
 - [ ] test with big load ~100 queries / inserts
 - [ ] Open url link (*optional*)
 ---
