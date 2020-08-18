@@ -8,9 +8,9 @@
 
 #define MAX_URL_LENGTH 1000
 #define MAX_HASH_LENGTH 250
-#define API_KEY "YOU API"
+#define API_KEY " YOUR API KEY"
 
-// Hold information that needed by worker thread.
+// Container: For thread processing.
 struct request{
 	char req[3];
 	char str[MAX_URL_LENGTH];
@@ -31,7 +31,7 @@ pthread_mutexattr_t mutex_atrribute;
 pthread_cond_t got_request = PTHREAD_COND_INITIALIZER;
 
 // Alerts threads to shut down.
-static bool in_shutdown = false;
+bool in_shutdown = false;
 
 /**
  * Parse user terminal input; options: insert url and queue database.
@@ -64,27 +64,39 @@ void *handle_request(void *thread_arg){
 	struct thread_arg_t args = *(struct thread_arg_t*) thread_arg;
 	uint8_t ID = args.thread_id;
 	mongoc_client_pool_t *pool = args.pool;
-	mongoc_client_t *client;
 	pthread_mutex_unlock(&request_mutex);
 
 	// Handles request once alerted by main().
 	struct request *request_to_handle;
+	mongoc_client_t *client;
 	while(true){
 		pthread_mutex_lock(&request_mutex);
-		// Wait for alert from main thread.
-		pthread_cond_wait(&got_request, &request_mutex);
-		if( in_shutdown ){
+
+		// If broadcast is called, while thread is busy.
+		if( !in_shutdown){
+			
+			// Wait for alert from main thread.
+			pthread_cond_wait(&got_request, &request_mutex);
+			// Handle request.
+			request_to_handle = head;
+			if(head != NULL)
+				head = head -> next;
+			
+
+		}
+		
+		if(in_shutdown){
+			// Shutting down thread..
 			pthread_mutex_unlock(&request_mutex);
 			break;
 		}
-		
-		// Handle request.
-		request_to_handle = head;
-		head = head -> next;
-		
+
 		// Free mutex, since we no longer are in critical area.
 		pthread_mutex_unlock(&request_mutex);
 
+		
+		if(request_to_handle == NULL) continue;
+		printf("Thread %d is handling: %s\n",ID, request_to_handle-> hashed_str);
 		
 		// Thread-Safe call for client.
 		client = mongoc_client_pool_pop(pool);
@@ -115,6 +127,7 @@ void *handle_request(void *thread_arg){
 
 	// Closing thread to free memory allocated.
 	printf( "Closing Thread %d ...\n",ID);
+
 	return NULL;
 	
 }
@@ -131,8 +144,7 @@ int main(){
 
 	uri = mongoc_uri_new_with_error(uri_string, & error);
 	if(!uri){
-		fprintf(stderr,
-				"failed to parse URI..\nerror message:  %s\n",
+		fprintf(stderr,	"failed to parse URI..\nerror message:  %s\n",
 				error.message);
 		return EXIT_FAILURE;
 	}
@@ -169,6 +181,7 @@ int main(){
 		size_t len = 0;
 		if( getline(&line, &len, stdin) == -1){
 			printf("Error message: %s\n",strerror(errno) );
+			free(line);
 			continue;
 		}
 
@@ -178,7 +191,6 @@ int main(){
 			*newline = 0;
 		
 		if( line != NULL && strlen(line) != 0){
-			
 
 			char* current_location;
 			char* req = strtok_r(line , delim, &current_location );
@@ -206,8 +218,8 @@ int main(){
 					head = new_request;
 					tail = new_request;
 				}else{
-					tail -> next = new_request;
-					tail = new_request;
+					tail->next = new_request;
+					tail = tail->next;
 				}
 				pthread_cond_signal(&got_request);
 				pthread_mutex_unlock(&request_mutex);
@@ -223,14 +235,13 @@ int main(){
 		}
 
 	}
-
 	pthread_mutex_lock( &request_mutex);
 	in_shutdown = true;
 	pthread_mutex_unlock( &request_mutex);
+
 	// Signal every thread to end.
 	pthread_cond_broadcast( &got_request);
-
-	for( unsigned int i = 0; i < 4; i++){
+	for( unsigned int i = 0; i < 4; ++i){
 		pthread_join( threads[i],&ret);
 	}
 
