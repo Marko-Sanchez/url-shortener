@@ -2,6 +2,20 @@
 
 ## Description
 Program converts a long URL (original) to a shorter url. Using MongoDB atlas, we are able to request long url's given a key or convert url from long to short. Two programs are available a single thread ( main ) and multi-threaded program, either can be selected to run the pogram with. 
+## Installation and Running
+To be able to run the program; The first step is installing a mongoc c driver. After installation, the database type used in this project is MongoDB Atlas.  <br />
+Creating an account is necessary to access the DB, after fallowing the process outlined in the tutorial obtain you API key and input into Macro.  <br />
+` #define API_KEY <string> `  <br />
+Finally, in your terminal runing make, will create an executible ./url-shortener, prompting you to enter desired command.  <br />
+You can dwell into the source code to be able to insert and query into your desired Collection.  <br \>
+In Summary:
+1. Install mongoc driver.
+2. Make an account on MongoDB.
+3. after cloning, execute make.
+4. Run desired commands
+<br />
+<br />
+The single threaded program can be run simply by changing the name of it to url-shortner.c, while changing the multi-threaded program name to something else.  <br />
 
 ## System DESIGN
 ----
@@ -26,8 +40,7 @@ Program converts a long URL (original) to a shorter url. Using MongoDB atlas, we
 - [x] solve any memory issues
 - [x] Test threaded server
 - [x] Make client connection thread safe
-- [ ] Clean code
-- [ ] Configure Parent Thread to distrubute loads more efficiently
+- [x] Clean code
 - [ ] test with big load ~100 queries / inserts
 - [ ] Open url link (*optional*)
 ---
