@@ -15,7 +15,7 @@ You can dwell into the source code to be able to insert and query into your desi
 3. after cloning, execute make.
 4. Run desired commands
 <br />
-**Note: **
+<b>Note:</b>
 The single threaded program can be run simply by changing the name of it to url-shortner.c, while changing the multi-threaded program name to something else.  <br />
 
 ## OBJECTIVES
