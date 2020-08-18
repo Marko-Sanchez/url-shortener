@@ -7,18 +7,17 @@ To be able to run the program; The first step is installing a mongoc c driver. A
 Creating an account is necessary to access the DB, after fallowing the process outlined in the tutorial obtain you API key and input into Macro.  <br />
 ` #define API_KEY <string> `  <br />
 Finally, in your terminal runing make, will create an executible ./url-shortener, prompting you to enter desired command.  <br />
-You can dwell into the source code to be able to insert and query into your desired Collection.  <br \>
-In Summary:
+You can dwell into the source code to be able to insert and query into your desired Collection.  <br />
+#####In Summary:
 1. Install mongoc driver.
 2. Make an account on MongoDB.
 3. after cloning, execute make.
 4. Run desired commands
 <br />
-<br />
+#####NOTE:
 The single threaded program can be run simply by changing the name of it to url-shortner.c, while changing the multi-threaded program name to something else.  <br />
-
-## System DESIGN
 ----
+## OBJECTIVES
 ### Initial Task:
 - [x] Choose Database
 - [x] Configure for Vim
