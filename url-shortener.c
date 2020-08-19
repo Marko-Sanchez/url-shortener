@@ -8,6 +8,7 @@
 
 #define MAX_URL_LENGTH 1000
 #define MAX_HASH_LENGTH 250
+#define NUM_THREADS 4
 #define API_KEY " YOUR API KEY"
 
 // Container: For thread processing.
@@ -32,6 +33,7 @@ pthread_cond_t got_request = PTHREAD_COND_INITIALIZER;
 
 // Alerts threads to shut down.
 bool in_shutdown = false;
+int request_to_process = 0;
 
 /**
  * Parse user terminal input; options: insert url and queue database.
@@ -75,14 +77,19 @@ void *handle_request(void *thread_arg){
 		// If broadcast is called, while thread is busy.
 		if( !in_shutdown){
 			
+			if( !(request_to_process >  0) )
 			// Wait for alert from main thread.
 			pthread_cond_wait(&got_request, &request_mutex);
-			// Handle request.
-			request_to_handle = head;
-			if(head != NULL)
-				head = head -> next;
-			
 
+			// Handle request.
+			if(head != NULL){
+			request_to_handle = head;
+			head = head -> next;
+			}else{
+				pthread_mutex_unlock(&request_mutex);
+				continue;
+			}
+			
 		}
 		
 		if(in_shutdown){
@@ -95,9 +102,7 @@ void *handle_request(void *thread_arg){
 		pthread_mutex_unlock(&request_mutex);
 
 		
-		if(request_to_handle == NULL) continue;
 		printf("Thread %d is handling: %s\n",ID, request_to_handle-> hashed_str);
-		
 		// Thread-Safe call for client.
 		client = mongoc_client_pool_pop(pool);
 		if( request_to_handle -> insert ){
@@ -123,6 +128,11 @@ void *handle_request(void *thread_arg){
 		mongoc_client_pool_push(pool,client);
 		// Free pointer allocated with malloc.
 		free(request_to_handle);
+
+		// Thread finished procesing,thus decrement.
+		pthread_mutex_lock(&request_mutex);
+		--request_to_process;
+		pthread_mutex_unlock(&request_mutex);
 	}
 
 	// Closing thread to free memory allocated.
@@ -156,11 +166,11 @@ int main(){
 	pthread_mutexattr_settype(&mutex_atrribute, PTHREAD_MUTEX_RECURSIVE);
 	pthread_mutex_init(&request_mutex, &mutex_atrribute);
 
-	pthread_t threads [ 4 ];
-	struct thread_arg_t thread_args[ 4 ];
+	pthread_t threads [ NUM_THREADS ];
+	struct thread_arg_t thread_args[ NUM_THREADS ];
 
 	// Create user inputed amount of threads.
-	for( unsigned int i = 0; i < 4 ; ++i){
+	for( unsigned int i = 0; i < NUM_THREADS; ++i){
 		// Intialize arguements for thread.
 		thread_args[i].thread_id = i;
 		thread_args[i].pool = pool;
@@ -221,6 +231,9 @@ int main(){
 					tail->next = new_request;
 					tail = tail->next;
 				}
+				// Thread wil process request.
+				++request_to_process;
+
 				pthread_cond_signal(&got_request);
 				pthread_mutex_unlock(&request_mutex);
 			}
@@ -228,20 +241,26 @@ int main(){
 			// Free char* malloc'd by getline.
 			free(line);
 		}else{
+			// Wait till threads finish processing.
+			while( request_to_process != 0){
+				sleep(1);
+			}
+
 			// User pressed enter thus, they want to exit. 
-			printf("Exiting program...\n\n");
+			printf("\n\nExiting program...\n");
 			free(line);
 			break;
 		}
 
 	}
+
 	pthread_mutex_lock( &request_mutex);
 	in_shutdown = true;
 	pthread_mutex_unlock( &request_mutex);
 
 	// Signal every thread to end.
 	pthread_cond_broadcast( &got_request);
-	for( unsigned int i = 0; i < 4; ++i){
+	for( unsigned int i = 0; i < NUM_THREADS; ++i){
 		pthread_join( threads[i],&ret);
 	}
 
