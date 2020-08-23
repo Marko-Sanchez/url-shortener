@@ -8,8 +8,8 @@ Creating an account is necessary to access the DB, after fallowing the process o
 ` #define API_KEY <string> `  <br />
 Finally, in your terminal runing make, will create an executible ./url-shortener, prompting you to enter desired command.  <br />
 Commands: 
-* Insertion, -i <string>
-* Query, -q <string> 
+* Insertion: -i 'string'
+* Query: -q 'string' 
 <br />
 You can dwell into the source code to be able to insert and query into your desired Collection.  <br />
 
@@ -21,7 +21,7 @@ You can dwell into the source code to be able to insert and query into your desi
 <br />
 <b>Note:</b>
 The single threaded program can be run simply by changing the name of it to url-shortner.c, while changing the multi-threaded program name to something else. Also
-the single threaded version uses ' [getopt()](https://www.man7.org/linux/man-pages/man3/getopt.3.html) ' which is a linux based function, Although this can be changed to work without being on a linux system using if-statements.  <br />
+the single threaded version uses [ getopt ](https://www.man7.org/linux/man-pages/man3/getopt.3.html) which is a linux based function, Although this can be changed to work without being on a linux system using if-statements.  <br />
 
 ## OBJECTIVES
 ### Initial Task:
